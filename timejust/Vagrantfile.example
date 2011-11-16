@@ -1,0 +1,44 @@
+Vagrant::Config.run do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  # config.vm.box = "app-web-alpha"
+
+  config.ssh.private_key_path   = "keys/vagrant"
+  config.ssh.username           = "leeloo"
+  config.ssh.host               = "localhost"
+  config.ssh.forwarded_port_key = "ssh"
+  config.ssh.timeout            = 30
+
+  ## Application ##
+  config.vm.define :app_web_alpha do |app_config|
+    
+    app_config.vm.customize do |vm|
+      vm.name = "dev-app-web-minsikzzang"
+    end
+
+    app_config.vm.box      = "ubuntu-10.04-base"
+    app_config.vm.base_mac = "080027FC5D0A"
+    
+    app_config.vm.network("192.168.15.101")
+    app_config.vm.share_folder("webroot", "/var/www", "apps")
+
+    app_config.vm.forward_port("ssh", 22, 2222, :auto => true)
+    
+    app_config.vm.provision :chef_client do |chef|
+      chef.chef_server_url        = "http://chef.timejust.com:4000"
+      chef.node_name              = "dev-app-web-minsikzzang"
+      chef.provisioning_path      = "/etc/chef"
+      chef.client_key_path        = "/etc/chef/client.pem"
+      chef.validation_client_name = "chef-validator"
+      chef.validation_key_path    = "keys/validation.pem"
+      
+      chef.add_role "development"
+      chef.add_role "server-ubuntu"
+      chef.add_role "datastore-redis"
+      chef.add_role "datastore-mongodb"
+      chef.add_role "app-web-alpha"
+    end
+  end
